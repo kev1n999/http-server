@@ -3,6 +3,50 @@ use std::thread;
 use std::io::{prelude::*, BufReader};
 use std::net::{TcpStream, TcpListener};
 
+enum RequestMethod {
+  GET,
+  POST,
+  PUT,
+  PATCH,
+  DELETE,
+}
+
+struct Route {
+  method: RequestMethod,
+  path: String,
+}
+
+struct Response {
+  status_line: String,
+  content_type: String,
+  // body: HashMap<String, String>,
+}
+
+impl Response {
+  fn new_response(
+    status_line: String, content_type: String, 
+  ) -> Self {
+    Response { status_line, content_type }
+  }
+
+  fn parse_method(&self, method: &str) -> RequestMethod {
+    match method {
+      "GET" => RequestMethod::GET,
+      "POST" => RequestMethod::POST,
+      "PUT" => RequestMethod::PUT,
+      "PATCH" => RequestMethod::PATCH,
+      "DELETE" => RequestMethod::DELETE,
+      _ => panic!("invalid request method!"),
+    }
+  }
+}
+
+impl Route {
+  fn new_route(method: RequestMethod, path: String) -> Self {
+    Route { method, path }
+  }
+}
+
 pub fn try_server_connect(port: &'static str) {
   let stream = TcpListener::bind(&format!("127.0.0.1:{}", port)).unwrap();
   for stream in stream.incoming() {
@@ -24,18 +68,50 @@ pub fn server_handle(mut stream: TcpStream) {
     .collect();
   println!("new request: {:#?}", request);
 
+  let request_line = request.get(0);
   let status_line = "HTTP/1.1 200 OK";
-  match read_html_file() {
-    Ok(content) => {
-      let response = format!("{status_line}\r\nContent-Length: {}\r\n\r\n{content}", content.len());
+  let mut request_method = String::new();
+  let mut request_path = String::new();
+  
+  match request_line {
+    Some(line) => {
+      let mut parts = line.split_whitespace();
+      if let Some(method) = parts.next() {
+        request_method = method.to_string();
+      }
+      if let Some(path) = parts.next() {
+        request_path = path.to_string();
+      }
+    },
+    _ => eprintln!("an error ocurred to read the request line!"),
+  }
+
+  let content_type = "text/html; charset=utf-8";
+  let mut filename = String::new();
+  let server_response = Response::new_response(status_line.to_string(), content_type.to_string());
+  let method = server_response.parse_method(&request_method);
+
+  match method {
+    RequestMethod::GET => {
+      if request_path == "/".to_string() {
+        filename.push_str("src/home.html");
+      } 
+    },
+    _ => eprintln!("invalid request method received"),
+  }
+  
+  let html_file_content = read_html_file(&filename);
+  match html_file_content {
+    Ok(response_content) => {
+      let response = format!("{}\r\nContent-Length: {}\r\n\r\n{}", status_line, response_content.len(), response_content);
       stream.write_all(response.as_bytes()).unwrap();
     },
-    Err(err) => eprintln!("an error ocurred to send html response: {}", err),
+    Err(err) => eprintln!("an error ocurred to get response content\n{}", err),
   }
 }
 
-fn read_html_file() -> std::io::Result<String> {
-  let mut html_file = fs::File::open("src/index.html")?;
+fn read_html_file(file_name: &str) -> std::io::Result<String> {
+  let mut html_file = fs::File::open(file_name)?;
   let mut html_content = String::new();
   html_file.read_to_string(&mut html_content)?;
   Ok(html_content)
