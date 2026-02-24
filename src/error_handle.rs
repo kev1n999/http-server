@@ -1,4 +1,6 @@
 use std::fmt;
+use std::io::{Write};
+use std::net::TcpStream;
 
 pub enum StatusCode {
   Success(i32),
@@ -39,4 +41,8 @@ impl ResponseError {
     );
     ResponseError { content: def_message }
   }
+}
+
+pub fn send_response_error(mut stream: &TcpStream, response_content: String) {
+  stream.write_all(&response_content.as_bytes()).unwrap();
 }

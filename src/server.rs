@@ -3,6 +3,7 @@ use std::thread;
 use std::io::{prelude::*, BufReader};
 use std::net::{TcpStream, TcpListener};
 use crate::error_handle::ResponseError;
+use crate::error_handle::send_response_error;
 
 enum RequestMethod {
   GET,
@@ -98,9 +99,7 @@ pub fn server_handle(mut stream: TcpStream) {
       match route.path.as_str() {
         "/" => filename.push_str("home.html"),
         _ => {
-          let response_error = ResponseError::not_found_error("page not found!");
-          let response_content = response_error.content;
-          stream.write_all(response_content.as_bytes()).unwrap();
+          send_response_error(&stream, ResponseError::not_found_error("page not found!").content);
         },
       }
     },
