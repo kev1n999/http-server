@@ -96,7 +96,7 @@ pub fn server_handle(mut stream: TcpStream) {
   match route.method {
     RequestMethod::GET => {
       match route.path.as_str() {
-        "/" => filename.push_str("src/home.html"),
+        "/" => filename.push_str("home.html"),
         _ => {
           let response_error = ResponseError::not_found_error("page not found!");
           let response_content = response_error.content;
@@ -118,7 +118,7 @@ pub fn server_handle(mut stream: TcpStream) {
 }
 
 fn read_html_file(file_name: &str) -> std::io::Result<String> {
-  let mut html_file = fs::File::open(file_name)?;
+  let mut html_file = fs::File::open("src/html/".to_string() + file_name)?;
   let mut html_content = String::new();
   html_file.read_to_string(&mut html_content)?;
   Ok(html_content)
