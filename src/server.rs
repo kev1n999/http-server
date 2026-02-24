@@ -2,6 +2,7 @@ use std::fs;
 use std::thread;
 use std::io::{prelude::*, BufReader};
 use std::net::{TcpStream, TcpListener};
+use crate::error_handle::ResponseError;
 
 enum RequestMethod {
   GET,
@@ -11,9 +12,9 @@ enum RequestMethod {
   DELETE,
 }
 
-struct Route {
-  method: RequestMethod,
-  path: String,
+struct Route<'a> {
+  method: &'a RequestMethod,
+  path: &'a String,
 }
 
 struct Response {
@@ -24,7 +25,7 @@ struct Response {
 
 impl Response {
   fn new_response(
-    status_line: String, content_type: String, 
+    status_line: String, content_type: String,
   ) -> Self {
     Response { status_line, content_type }
   }
@@ -41,8 +42,8 @@ impl Response {
   }
 }
 
-impl Route {
-  fn new_route(method: RequestMethod, path: String) -> Self {
+impl<'a> Route<'a> {
+  fn new_route(method: &'a RequestMethod, path: &'a String) -> Self {
     Route { method, path }
   }
 }
@@ -72,7 +73,7 @@ pub fn server_handle(mut stream: TcpStream) {
   let status_line = "HTTP/1.1 200 OK";
   let mut request_method = String::new();
   let mut request_path = String::new();
-  
+
   match request_line {
     Some(line) => {
       let mut parts = line.split_whitespace();
@@ -90,23 +91,30 @@ pub fn server_handle(mut stream: TcpStream) {
   let mut filename = String::new();
   let server_response = Response::new_response(status_line.to_string(), content_type.to_string());
   let method = server_response.parse_method(&request_method);
+  let route = Route::new_route(&method, &request_path);
 
-  match method {
+  match route.method {
     RequestMethod::GET => {
-      if request_path == "/".to_string() {
-        filename.push_str("src/home.html");
-      } 
+      match route.path.as_str() {
+        "/" => { filename.push_str("home.html"); },
+        _ => {
+          let response_error = ResponseError::not_found_error("page not found!");
+          let status_code = response_error.status_code;
+          let response_content = response_error.content;
+          stream.write_all(&format!("{}\n{}", status_code, response_content).as_bytes()).unwrap();
+        },
+      }
     },
-    _ => eprintln!("invalid request method received"),
+    _ => panic!("")
   }
-  
+
   let html_file_content = read_html_file(&filename);
   match html_file_content {
     Ok(response_content) => {
       let response = format!("{}\r\nContent-Length: {}\r\n\r\n{}", status_line, response_content.len(), response_content);
       stream.write_all(response.as_bytes()).unwrap();
     },
-    Err(err) => eprintln!("an error ocurred to get response content\n{}", err),
+    Err(err) => eprintln!("\nan error ocurred to get response content\n{}", err),
   }
 }
 
