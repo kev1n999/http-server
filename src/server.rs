@@ -96,16 +96,15 @@ pub fn server_handle(mut stream: TcpStream) {
   match route.method {
     RequestMethod::GET => {
       match route.path.as_str() {
-        "/" => { filename.push_str("home.html"); },
+        "/" => filename.push_str("src/home.html"),
         _ => {
           let response_error = ResponseError::not_found_error("page not found!");
-          let status_code = response_error.status_code;
           let response_content = response_error.content;
-          stream.write_all(&format!("{}\n{}", status_code, response_content).as_bytes()).unwrap();
+          stream.write_all(response_content.as_bytes()).unwrap();
         },
       }
     },
-    _ => panic!("")
+    _ => eprintln!("invalid method!"),
   }
 
   let html_file_content = read_html_file(&filename);
