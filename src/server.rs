@@ -12,7 +12,6 @@ struct CalcRequest {
   number1: f64,
   number2: f64,
 }
-
 enum RequestMethod {
   GET,
   POST,
@@ -20,16 +19,13 @@ enum RequestMethod {
   PATCH,
   DELETE,
 }
-
 struct Route<'a> {
   method: &'a RequestMethod,
   path: &'a String,
 }
-
 struct Response {
   status_line: String,
   content_type: String,
-  // body: HashMap<String, String>,
 }
 
 impl Response {
@@ -38,7 +34,6 @@ impl Response {
   ) -> Self {
     Response { status_line, content_type }
   }
-
   fn parse_method(&self, method: &str) -> RequestMethod {
     match method {
       "GET" => RequestMethod::GET,
@@ -57,7 +52,9 @@ impl<'a> Route<'a> {
   }
 }
 
+// main function to connect server
 pub fn try_server_connect(port: &'static str) {
+  // create a tcp socket in localhost
   let stream = TcpListener::bind(&format!("127.0.0.1:{}", port)).unwrap();
   for stream in stream.incoming() {
     match stream {
@@ -79,7 +76,6 @@ pub fn server_handle(mut stream: TcpStream) {
   let req_headers = req_parts[0];
   let req_body = req_parts.get(1).unwrap_or(&"").trim();
   let request_line: Option<&str> = req_headers.lines().next();
-
   println!("new request:\nheaders:{:#?}\nbody: {:#?}\n", req_headers, req_body);
 
   let status_line = "HTTP/1.1 200 OK";
