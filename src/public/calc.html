@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>calc example</title>
+    <script src="./scripts.js" defer></script>
+  </head>
+  <body>
+    <style>
+      .form-container {
+        display: flex;
+        justify-content: center;
+        flex-direction: column;
+        gap: 6px;
+      }
+      input {
+        width: 180px;
+      }
+      select {
+        width: 60px;
+      }
+      button {
+        width: 60px;
+        background-color: green;
+        cursor: pointer;
+      }
+      .button { margin: 12px; }
+    </style>
+    <form class="form-container">
+      <label>Type a number:</label>
+      <input id="number1" type="number">
+      <label>Type another number:</label>
+      <input id="number2" type="number">
+
+      <select id="select-operator">
+        <option value="">operation</option>
+        <option value="sum">sum</option>
+        <option value="sub">sub</option>
+        <option value="mult">mult</option>
+        <option value="div">div</option>
+      </select>
+    </form>
+    <div class="button">
+      <button type="button" id="run">run</button>
+    </div>
+  </body>
+</html>

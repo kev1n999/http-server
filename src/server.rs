@@ -68,20 +68,28 @@ pub fn try_server_connect(port: &'static str) {
 }
 
 pub fn server_handle(mut stream: TcpStream) {
+  // buffer to read data sent by client
   let mut buffer = [0u8; 4064];
   let n = stream.read(&mut buffer).unwrap();
   let request_str = String::from_utf8_lossy(&buffer[..n]);
+  // get parts of request to separate headers of body
   let req_parts: Vec<&str> = request_str.split("\r\n\r\n").collect();
 
+  // request headers
   let req_headers = req_parts[0];
+  // request body
   let req_body = req_parts.get(1).unwrap_or(&"").trim();
+  // request line
+  // METHOD /PATH HTTP/1.1
   let request_line: Option<&str> = req_headers.lines().next();
+  // display headers and body of request
   println!("new request:\nheaders:{:#?}\nbody: {:#?}\n", req_headers, req_body);
 
-  let status_line = "HTTP/1.1 200 OK";
+  let success_response_status_line = "HTTP/1.1 200 OK";
   let mut request_method = String::new();
   let mut request_path = String::new();
 
+  // get and store method and path of request line to use to process requests
   match request_line {
     Some(line) => {
       let mut parts = line.split_whitespace();
@@ -95,24 +103,33 @@ pub fn server_handle(mut stream: TcpStream) {
     _ => eprintln!("an error ocurred to read the request line!"),
   }
 
-  let content_type = "text/html; charset=utf-8";
+  let html_content_type = "text/html; charset=utf-8";
+  // to store filenames to send to client/browser
   let mut filename = String::new();
-  let server_response = Response::new_response(status_line.to_string(), content_type.to_string());
+  let server_response = Response::new_response(success_response_status_line.to_string(), html_content_type.to_string());
   let method = server_response.parse_method(&request_method);
   let route = Route::new_route(&method, &request_path);
 
+  // process and respond requests
   match route.method {
     RequestMethod::GET => {
       match route.path.as_str() {
         "/" => filename.push_str("home.html"),
         "/calculator" => filename.push_str("calc.html"),
+        "/scripts.js" => {
+          // get the javascript content of file
+          let js = fs::read_to_string("src/public/scripts.js").unwrap();
+          format_response(&stream, success_response_status_line, "application/javascript", &format!("console.log('hello world!');\n{}", &js));
+        }
         _ => {
           send_response_error(&stream, ResponseError::not_found_error("page not found!").content);
         },
       }
     },
     RequestMethod::POST => {
+      // get the json body sent in the post request
       let json_body = req_body.trim_matches(|c: char| c.is_whitespace());
+      // parse original json body to string
       let json_deserialize = serde_json::to_string_pretty(json_body);
       match route.path.as_str() {
         "/calculator" => {
@@ -120,6 +137,7 @@ pub fn server_handle(mut stream: TcpStream) {
             let inner_json: Option<String> = serde_json::from_str(&result.to_string()).unwrap();
             match inner_json {
               Some(j) => {
+                // parse json to struct
                 let parsed: CalcRequest = serde_json::from_str(&j).unwrap();
                 let operation = parsed.operation;
                 let number1 = parsed.number1;
@@ -128,19 +146,19 @@ pub fn server_handle(mut stream: TcpStream) {
                 match operation.as_str() {
                   "sum" => {
                     let sum = number1 + number2;
-                    calculator_response(&stream, status_line, &format!("{}", sum));
+                    format_response(&stream, success_response_status_line, "text/plain", &format!("the sum is: {}", sum));
                   },
                   "sub" => {
                     let sub = number1 - number2;
-                    calculator_response(&stream, status_line, &format!("{}", sub));
+                    format_response(&stream, success_response_status_line, "text/plain", &format!("the sub is: {}", sub));
                   },
                   "mult" => {
                     let mult = number1 * number2;
-                    calculator_response(&stream, status_line, &format!("{}", mult));
+                    format_response(&stream, success_response_status_line, "text/plain", &format!("the mult is: {}", mult));
                   },
                   "div" => {
                     let div = number1 / number2;
-                    calculator_response(&stream, status_line, &format!("{}", div));
+                    format_response(&stream, success_response_status_line, "text/plain", &format!("the div is: {}", div));
                   }
                   _ => {}
                 }
@@ -157,10 +175,19 @@ pub fn server_handle(mut stream: TcpStream) {
     _ => eprintln!("invalid method!"),
   }
 
+  // that html content will be sent in the response body
+  // |------------------------------------------------------|
+  // | Content-Type: text/html                              |
+  // | Content-Length: size of html content                 |
+  // | Status-Line/Response-Line: HTTP/1.1 200 OK           |
+  // | -----------------------------------------------------|
+  // | Body: html content                                   |
+  // |------------------------------------------------------|
+
   let html_file_content = read_html_file(&filename);
   match html_file_content {
     Ok(response_content) => {
-      let response = format!("{}\r\nContent-Length: {}\r\n\r\n{}", status_line, response_content.len(), response_content);
+      let response = format!("{}\r\nContent-Type: {}\r\nContent-Length: {}\r\n\r\n{}", success_response_status_line, html_content_type, response_content.len(), response_content);
       stream.write_all(response.as_bytes()).unwrap();
     },
     Err(err) => eprintln!("\nan error ocurred to get response content\n{}", err),
@@ -168,20 +195,20 @@ pub fn server_handle(mut stream: TcpStream) {
 }
 
 fn read_html_file(file_name: &str) -> std::io::Result<String> {
-  let mut html_file = fs::File::open("src/html/".to_string() + file_name)?;
+  let mut html_file = fs::File::open("src/public/".to_string() + file_name)?;
   let mut html_content = String::new();
   html_file.read_to_string(&mut html_content)?;
   Ok(html_content)
 }
 
-fn calculator_response(mut stream: &TcpStream, status_line: &str, result: &str) {
+fn format_response(mut stream: &TcpStream, status_line: &str, content_type: &str, content: &str) {
   stream.write_all(
     &format!(
       "{}\r\n\
        Content-Length: {}\r\n\
-       Content-Type: text/plain\r\n\
+       Content-Type: {}\r\n\
        \r\n\
-       {}", status_line, &format!("{}", result).len(), result,
+       {}", status_line, &format!("{}", content).len(), content_type.trim(), content,
     ).as_bytes()
   ).unwrap()
 }
