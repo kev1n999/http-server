@@ -1,9 +1,17 @@
 use std::fs;
 use std::thread;
-use std::io::{prelude::*, BufReader};
+use std::io::{prelude::*};
 use std::net::{TcpStream, TcpListener};
 use crate::error_handle::ResponseError;
 use crate::error_handle::send_response_error;
+use serde::Deserialize;
+
+#[derive(Debug, Deserialize)]
+struct CalcRequest {
+  operation: String,
+  number1: f64,
+  number2: f64,
+}
 
 enum RequestMethod {
   GET,
@@ -63,14 +71,17 @@ pub fn try_server_connect(port: &'static str) {
 }
 
 pub fn server_handle(mut stream: TcpStream) {
-  let buff_reader = BufReader::new(&stream);
-  let request: Vec<_> = buff_reader.lines()
-    .map(|result| result.expect("an error ocurred to get result of request!"))
-    .take_while(|line| !line.is_empty()) // empty line to separate header of body
-    .collect();
-  println!("new request: {:#?}", request);
+  let mut buffer = [0u8; 4064];
+  let n = stream.read(&mut buffer).unwrap();
+  let request_str = String::from_utf8_lossy(&buffer[..n]);
+  let req_parts: Vec<&str> = request_str.split("\r\n\r\n").collect();
 
-  let request_line = request.get(0);
+  let req_headers = req_parts[0];
+  let req_body = req_parts.get(1).unwrap_or(&"").trim();
+  let request_line: Option<&str> = req_headers.lines().next();
+
+  println!("new request:\nheaders:{:#?}\nbody: {:#?}\n", req_headers, req_body);
+
   let status_line = "HTTP/1.1 200 OK";
   let mut request_method = String::new();
   let mut request_path = String::new();
@@ -98,11 +109,32 @@ pub fn server_handle(mut stream: TcpStream) {
     RequestMethod::GET => {
       match route.path.as_str() {
         "/" => filename.push_str("home.html"),
+        "/calculator" => filename.push_str("calc.html"),
         _ => {
           send_response_error(&stream, ResponseError::not_found_error("page not found!").content);
         },
       }
     },
+    RequestMethod::POST => {
+      let json_body = req_body.trim_matches(|c: char| c.is_whitespace());
+      let json_deserialize = serde_json::to_string_pretty(json_body);
+      match route.path.as_str() {
+        "/calculator" => {
+          if let Ok(result) = json_deserialize {
+            let inner_json: Option<String> = serde_json::from_str(&result.to_string()).unwrap();
+            match inner_json {
+              Some(j) => {
+                println!("{}", j);
+              },
+              None => eprintln!("any json received"),
+            }
+          }
+        },
+        _ => {
+          send_response_error(&stream, ResponseError::not_found_error("route not found!").content);
+        },
+      }
+    }
     _ => eprintln!("invalid method!"),
   }
 

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>calc example</title>
+  </head>
+  <style>
+    .form-container {
+      display: flex;
+      justify-content: center;
+      flex-direction: column;
+      gap: 6px;
+    }
+    input {
+      width: 180px;
+    }
+    select {
+      width: 60px;
+    }
+    button { width: 60px; background-color: green; }
+  </style>
+  <body>
+    <form class="form-container">
+      <label>Type a number:</label>
+      <input id="number1" type="number"></input>
+      <label>Type another number:</label>
+      <input id="number2" type="number""></input>
+
+      <select id="select-operator">
+        <option value=""">operation</option>
+        <option value="sum"">sum</option>
+      </select>
+
+      <button id="run">run</button>
+    </form>
+  <script src="scripts.js"></script>
+  </body>
+</html>
