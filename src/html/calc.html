@@ -30,6 +30,9 @@
       <select id="select-operator">
         <option value="">operation</option>
         <option value="sum">sum</option>
+        <option value="sub">sub</option>
+        <option value="mult">mult</option>
+        <option value="div">div</option>
       </select>
     </form>
     <div class="button">
@@ -62,10 +65,26 @@
       button.addEventListener("click", async () => {
         const n1 = Number(number1.value);
         const n2 = Number(number2.value);
+        let result;
 
         switch (selected_operator.value.trim()) {
           case "sum":
-            const result = await post_request("sum", n1, n2);
+            result = await post_request("sum", n1, n2);
+            window.alert(result);
+            break;
+
+          case "sub":
+            result = await post_request("sub", n1, n2);
+            window.alert(result);
+            break;
+
+          case "mult":
+            result = await post_request("mult", n1, n2);
+            window.alert(result);
+            break;
+
+          case "div":
+            result = await post_request("div", n1, n2);
             window.alert(result);
             break;
           }

@@ -132,16 +132,20 @@ pub fn server_handle(mut stream: TcpStream) {
                 match operation.as_str() {
                   "sum" => {
                     let sum = number1 + number2;
-                    stream.write_all(
-                      &format!(
-                        "{}\r\n\
-                         Content-Length: {}\r\n\
-                         Content-Type: text/plain\r\n\
-                         \r\n\
-                         {}", status_line, &format!("{}", sum).len(), sum,
-                      ).as_bytes()
-                    ).unwrap()
+                    calculator_response(&stream, status_line, &format!("{}", sum));
                   },
+                  "sub" => {
+                    let sub = number1 - number2;
+                    calculator_response(&stream, status_line, &format!("{}", sub));
+                  },
+                  "mult" => {
+                    let mult = number1 * number2;
+                    calculator_response(&stream, status_line, &format!("{}", mult));
+                  },
+                  "div" => {
+                    let div = number1 / number2;
+                    calculator_response(&stream, status_line, &format!("{}", div));
+                  }
                   _ => {}
                 }
               },
@@ -172,4 +176,16 @@ fn read_html_file(file_name: &str) -> std::io::Result<String> {
   let mut html_content = String::new();
   html_file.read_to_string(&mut html_content)?;
   Ok(html_content)
+}
+
+fn calculator_response(mut stream: &TcpStream, status_line: &str, result: &str) {
+  stream.write_all(
+    &format!(
+      "{}\r\n\
+       Content-Length: {}\r\n\
+       Content-Type: text/plain\r\n\
+       \r\n\
+       {}", status_line, &format!("{}", result).len(), result,
+    ).as_bytes()
+  ).unwrap()
 }
