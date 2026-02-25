@@ -4,35 +4,72 @@
     <meta charset="utf-8">
     <title>calc example</title>
   </head>
-  <style>
-    .form-container {
-      display: flex;
-      justify-content: center;
-      flex-direction: column;
-      gap: 6px;
-    }
-    input {
-      width: 180px;
-    }
-    select {
-      width: 60px;
-    }
-    button { width: 60px; background-color: green; }
-  </style>
   <body>
+    <style>
+      .form-container {
+        display: flex;
+        justify-content: center;
+        flex-direction: column;
+        gap: 6px;
+      }
+      input {
+        width: 180px;
+      }
+      select {
+        width: 60px;
+      }
+      button { width: 60px; background-color: green; }
+      .button { margin: 12px; }
+    </style>
     <form class="form-container">
       <label>Type a number:</label>
-      <input id="number1" type="number"></input>
+      <input id="number1" type="number">
       <label>Type another number:</label>
-      <input id="number2" type="number""></input>
+      <input id="number2" type="number">
 
       <select id="select-operator">
-        <option value=""">operation</option>
-        <option value="sum"">sum</option>
+        <option value="">operation</option>
+        <option value="sum">sum</option>
       </select>
-
-      <button id="run">run</button>
     </form>
-  <script src="scripts.js"></script>
+    <div class="button">
+      <button type="button" id="run">run</button>
+    </div>
+
+    <script>
+      const button = document.getElementById("run");
+      const number1 = document.getElementById("number1");
+      const number2 = document.getElementById("number2");
+      const selected_operator = document.getElementById("select-operator");
+
+      async function post_request(operation, number1, number2) {
+        try {
+          const request = await fetch("/calculator", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              operation: operation,
+              number1: number1,
+              number2: number2,
+            })
+          });
+
+          if (!request.ok) throw new Error("an error ocurred to request!");
+          return await request.text();
+        } catch (err) { console.error(err); }
+      };
+
+      button.addEventListener("click", async () => {
+        const n1 = Number(number1.value);
+        const n2 = Number(number2.value);
+
+        switch (selected_operator.value.trim()) {
+          case "sum":
+            const result = await post_request("sum", n1, n2);
+            window.alert(result);
+            break;
+          }
+      });
+    </script>
   </body>
 </html>

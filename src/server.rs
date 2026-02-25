@@ -124,7 +124,26 @@ pub fn server_handle(mut stream: TcpStream) {
             let inner_json: Option<String> = serde_json::from_str(&result.to_string()).unwrap();
             match inner_json {
               Some(j) => {
-                println!("{}", j);
+                let parsed: CalcRequest = serde_json::from_str(&j).unwrap();
+                let operation = parsed.operation;
+                let number1 = parsed.number1;
+                let number2 = parsed.number2;
+
+                match operation.as_str() {
+                  "sum" => {
+                    let sum = number1 + number2;
+                    stream.write_all(
+                      &format!(
+                        "{}\r\n\
+                         Content-Length: {}\r\n\
+                         Content-Type: text/plain\r\n\
+                         \r\n\
+                         {}", status_line, &format!("{}", sum).len(), sum,
+                      ).as_bytes()
+                    ).unwrap()
+                  },
+                  _ => {}
+                }
               },
               None => eprintln!("any json received"),
             }
