@@ -4,6 +4,7 @@ use std::io::{prelude::*};
 use std::net::{TcpStream, TcpListener};
 use crate::response_message::{ResponseMessage, StatusCode};
 use crate::response_message::send_response_error;
+use crate::database;
 use serde::Deserialize;
 use std::collections;
 
@@ -16,6 +17,11 @@ enum RequestMethod {
   Invalid,
 }
 
+#[derive(Debug, Deserialize)]
+struct People {
+  name: String,
+  age: String,
+}
 #[derive(Debug, Deserialize)]
 struct CalcRequest {
   operation: String,
@@ -103,7 +109,6 @@ pub fn server_handle(mut stream: TcpStream) {
   println!("new request:\nheaders:{:#?}\nbody: {:#?}\n", req_headers, req_body);
 
   let success_status_code = StatusCode::Success;
-  let success_status_line = "HTTP/1.1 200 OK";
   let mut request_method = String::new();
   let mut request_path = String::new();
 
@@ -124,6 +129,7 @@ pub fn server_handle(mut stream: TcpStream) {
   let html_content_type = "text/html; charset=utf-8";
   let js_content_type = "application/javascript";
   let text_content_type = "text/plain";
+  let json_content_type = "application/json";
   // to store filenames to send to client/browser
   let mut filename = String::new();
 
@@ -133,9 +139,19 @@ pub fn server_handle(mut stream: TcpStream) {
       match request_path.as_str() {
         "/" => filename.push_str("home.html"),
         "/calculator" => filename.push_str("calc.html"),
-        "/scripts.js" => {
+        "/create-people" => filename.push_str("people.html"),
+        "/people.js" => {
           // get the javascript content of file
-          let js = fs::read_to_string("src/public/scripts.js").unwrap();
+          let js = fs::read_to_string("src/public/people.js").unwrap();
+          let body_content = &format!("console.log('people.js was loaded!!');\n{}", &js);
+          let response = Response::new_response(
+            success_status_code, create_response_header(js_content_type, body_content)
+          );
+          stream.write_all(&response.parse_response(body_content));
+        }
+        "/calc.js" => {
+          // get the javascript content of file
+          let js = fs::read_to_string("src/public/calc.js").unwrap();
           let body_content = &format!("console.log('hello world!');\n{}", &js);
           let response = Response::new_response(
             success_status_code, create_response_header(js_content_type, body_content)
@@ -143,7 +159,7 @@ pub fn server_handle(mut stream: TcpStream) {
           stream.write_all(&response.parse_response(body_content));
         }
         _ => {
-          send_response_error(&stream, ResponseMessage::not_found_error("page not found!").content);
+          send_response_error(&stream, ResponseMessage::not_found_error("page not found!", text_content_type).content);
         },
       }
     },
@@ -153,16 +169,43 @@ pub fn server_handle(mut stream: TcpStream) {
       // parse original json body to string
       let json_deserialize = serde_json::to_string_pretty(json_body);
       match request_path.as_str() {
+        "/create-people" => {
+          if let Ok(result) = json_deserialize {
+            let inner_json: Option<String> = serde_json::from_str(&result.to_string()).unwrap();
+            match inner_json {
+              Some(j) => {
+                let people_parsed: People = serde_json::from_str(&j).unwrap();
+                if let Ok(conn) = database::connect_db() {
+                  match database::insert_new_people(conn, &people_parsed.name, &people_parsed.age) {
+                    Ok(_) => {
+                      let body_content = &format!("People was created!");
+                      let response = Response::new_response(
+                        success_status_code, create_response_header(text_content_type, body_content)
+                      );
+                      stream.write_all(&response.parse_response(body_content));
+                    },
+                    Err(err) => {
+                      eprintln!("an error ocurred to create the people!");
+                      let body_content = format!( r#"{{ "status": "err", "message": "{}" }}"#, err);
+                      send_response_error(&stream, ResponseMessage::badrequest_error(&body_content, json_content_type).content);
+                    }
+                  }
+                }
+              },
+              _ => eprintln!("an error ocurred to parse json!")
+            }
+          }
+        },
         "/calculator" => {
           if let Ok(result) = json_deserialize {
             let inner_json: Option<String> = serde_json::from_str(&result.to_string()).unwrap();
             match inner_json {
               Some(j) => {
                 // parse json to struct
-                let parsed: CalcRequest = serde_json::from_str(&j).unwrap();
-                let operation = parsed.operation;
-                let number1 = parsed.number1;
-                let number2 = parsed.number2;
+                let calc_parsed: CalcRequest = serde_json::from_str(&j).unwrap();
+                let operation = calc_parsed.operation;
+                let number1 = calc_parsed.number1;
+                let number2 = calc_parsed.number2;
 
                 match operation.as_str() {
                   "sum" => {
@@ -197,7 +240,7 @@ pub fn server_handle(mut stream: TcpStream) {
                     );
                     stream.write_all(&response.parse_response(body_content));
                   }
-                  _ => {}
+                  _ => eprintln!("an error ocurred to parse json!")
                 }
               },
               None => eprintln!("any json received"),
@@ -205,7 +248,7 @@ pub fn server_handle(mut stream: TcpStream) {
           }
         },
         _ => {
-          send_response_error(&stream, ResponseMessage::not_found_error("route not found!").content);
+          send_response_error(&stream, ResponseMessage::not_found_error("route not found!", text_content_type).content);
         },
       }
     },

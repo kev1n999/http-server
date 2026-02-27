@@ -18,11 +18,11 @@ pub struct ResponseMessage {
 impl fmt::Display for StatusCode {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     match self {
-      StatusCode::Success => write!(f,  "200 OK"),
-      StatusCode::Created => write!(f,  "201 Created"),
-      StatusCode::BadRequest => write!(f,  "400 Bad Request"),
-      StatusCode::NotFound => write!(f,  "404 Not Found"),
-      StatusCode::InternalServerError => write!(f,  "500 Internal Server Error"),
+      StatusCode::Success => write!(f, "200 OK"),
+      StatusCode::Created => write!(f, "201 Created"),
+      StatusCode::BadRequest => write!(f, "400 Bad Request"),
+      StatusCode::NotFound => write!(f, "404 Not Found"),
+      StatusCode::InternalServerError => write!(f, "500 Internal Server Error"),
     }
   }
 }
@@ -32,20 +32,21 @@ impl fmt::Display for ResponseMessage {
   }
 }
 
+fn header_format(status_code: StatusCode, content_type: &str, content_error: &str) -> String {
+  format!(
+      "HTTP/1.1 {}\r\n\
+  Content-Type: {}\r\n\
+  Content-Length: {}\r\n\
+  Connection: close\r\n\
+  \r\n\
+  {}", status_code, content_type, content_error.len(), content_error)
+}
 impl ResponseMessage {
-  pub fn not_found_error(content_error: &str) -> Self {
-    let def_message = format!(
-        "HTTP/1.1 {}\r\n\
-    Content-Type: text/plain; charset=utf-8\r\n\
-    Content-Length: {}\r\n\
-    Connection: close\r\n\
-    \r\n\
-    {}",
-        StatusCode::NotFound,
-        content_error.len(),
-        content_error
-    );
-    ResponseMessage { content: def_message }
+  pub fn badrequest_error(content_error: &str, content_type: &str) -> Self {
+    ResponseMessage { content: header_format(StatusCode::BadRequest, content_type, content_error) }
+  }
+  pub fn not_found_error(content_error: &str, content_type: &str) -> Self {
+    ResponseMessage { content: header_format(StatusCode::NotFound, content_type, content_error) }
   }
 }
 
