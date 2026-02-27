@@ -5,13 +5,14 @@ pub fn connect_db() -> Result<Connection> {
   create_db(&conn)?;
   Ok(conn)
 }
-pub fn create_db(conn: &Connection) -> Result<()> {
-  conn.execute("
-    CREATE TABLE IF NOT EXISTS People (
-      name TEXT,
-      age INTEGER,
-    )
-  ", (),)?;
+fn create_db(conn: &Connection) -> Result<()> {
+  conn.execute(
+    "CREATE TABLE IF NOT EXISTS people (
+      id INTEGER PRIMARY KEY,
+      name TEXT NOT NULL,
+      age INTEGER NOT NULL
+    )",
+  [],)?;
   Ok(())
 }
 pub fn insert_new_people(conn: Connection, name: &str, age: &str) -> Result<()> {

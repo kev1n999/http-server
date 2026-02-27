@@ -191,7 +191,6 @@ pub fn server_handle(mut stream: TcpStream) {
                     }
                   }
                 }
-
               },
               _ => eprintln!("an error ocurred to parse json!")
             }
