@@ -1,6 +1,7 @@
 use std::fmt;
 use std::io::{Write};
 use std::net::TcpStream;
+use std::collections::{HashMap};
 
 #[derive(Copy, Clone)]
 pub enum StatusCode {
@@ -41,6 +42,13 @@ fn header_format(status_code: StatusCode, content_type: &str, content_error: &st
   \r\n\
   {}", status_code, content_type, content_error.len(), content_error)
 }
+pub fn create_response_header(content_type: &str, body_content: &str) -> HashMap<String, String> {
+  let mut headers_hash: HashMap<String, String> = HashMap::new();
+  headers_hash.insert("Content-Length".to_string(), body_content.len().to_string());
+  headers_hash.insert("Content-Type".to_string(), content_type.to_string());
+  headers_hash
+}
+
 impl ResponseMessage {
   pub fn badrequest_error(content_error: &str, content_type: &str) -> Self {
     ResponseMessage { content: header_format(StatusCode::BadRequest, content_type, content_error) }
