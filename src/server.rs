@@ -151,7 +151,7 @@ pub fn server_handle(mut stream: TcpStream) {
         },
         "/calc.css" => {
           // get the css content of file
-          let css = fs::read_to_string("src/public/people.css").unwrap();
+          let css = fs::read_to_string("src/public/calc.css").unwrap();
           let response = Response::new_response(
             success_status_code, create_response_header(css_content_type, &css)
           );
