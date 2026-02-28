@@ -2,8 +2,7 @@ use std::fs;
 use std::thread;
 use std::io::{prelude::*};
 use std::net::{TcpStream, TcpListener};
-use crate::response_message::{ResponseMessage, StatusCode};
-use crate::response_message::send_response_error;
+use crate::response_message::{ResponseMessage, StatusCode, send_response_error, create_response_header};
 use crate::database;
 use serde::Deserialize;
 use std::collections;
@@ -296,11 +295,4 @@ fn read_html_file(file_name: &str) -> std::io::Result<String> {
   let mut html_content = String::new();
   html_file.read_to_string(&mut html_content)?;
   Ok(html_content)
-}
-
-fn create_response_header(content_type: &str, body_content: &str) -> collections::HashMap<String, String> {
-  let mut headers_hash: collections::HashMap<String, String> = collections::HashMap::new();
-  headers_hash.insert("Content-Length".to_string(), body_content.len().to_string());
-  headers_hash.insert("Content-Type".to_string(), content_type.to_string());
-  headers_hash
 }
