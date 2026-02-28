@@ -1,0 +1,24 @@
+.form-container {
+	display: flex;
+	justify-content: center;
+	flex-direction: column;
+	gap: 6px;
+}
+
+input {
+	width: 180px;
+}
+
+select {
+	width: 60px;
+}
+
+button {
+	width: 60px;
+	background-color: green;
+	cursor: pointer;
+}
+
+.button {
+	margin: 12px;
+}
