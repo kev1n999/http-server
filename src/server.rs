@@ -130,6 +130,7 @@ pub fn server_handle(mut stream: TcpStream) {
   let js_content_type = "application/javascript";
   let text_content_type = "text/plain";
   let json_content_type = "application/json";
+  let css_content_type = "text/css";
   // to store filenames to send to client/browser
   let mut filename = String::new();
 
@@ -140,6 +141,22 @@ pub fn server_handle(mut stream: TcpStream) {
         "/" => filename.push_str("home.html"),
         "/calculator" => filename.push_str("calc.html"),
         "/create-people" => filename.push_str("people.html"),
+        "/people.css" => {
+          // get the css content of file
+          let css = fs::read_to_string("src/public/people.css").unwrap();
+          let response = Response::new_response(
+            success_status_code, create_response_header(css_content_type, &css)
+          );
+          stream.write_all(&response.parse_response(&css));
+        },
+        "/calc.css" => {
+          // get the css content of file
+          let css = fs::read_to_string("src/public/people.css").unwrap();
+          let response = Response::new_response(
+            success_status_code, create_response_header(css_content_type, &css)
+          );
+          stream.write_all(&response.parse_response(&css));
+        }
         "/people.js" => {
           // get the javascript content of file
           let js = fs::read_to_string("src/public/people.js").unwrap();
