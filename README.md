@@ -29,14 +29,15 @@ cargo run
 
 # Available Routes
 ```
----------------------
-GET /calculator     |
----------------------
-POST /create-people |
-Content-Type: application/json
-BODY: {
-  name: "person name",
-  age: "17",
-}
----------------------
+---------------------------------
+GET /calculator                 |
+GET /find-people                |
+---------------------------------
+POST /create-people             |
+Content-Type: application/json  |
+BODY: {                         |
+  name: "person name",          |
+  age: "17",                    |
+}                               |
+--------------------------------- 
 ```
