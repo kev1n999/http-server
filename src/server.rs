@@ -22,6 +22,12 @@ struct People {
   age: String,
 }
 #[derive(Debug, Deserialize)]
+struct DebugPeople {
+  id: String,
+  name: String,
+  age: String,
+}
+#[derive(Debug, Deserialize)]
 struct CalcRequest {
   operation: String,
   number1: f64,
@@ -140,6 +146,22 @@ pub fn server_handle(mut stream: TcpStream) {
         "/" => filename.push_str("home.html"),
         "/calculator" => filename.push_str("calc.html"),
         "/create-people" => filename.push_str("people.html"),
+        "/find-people" => {
+          if let Ok(conn) = database::connect_db() {
+            match database::fetch_people(&conn) {
+              Ok(data) => {
+                let hash_string = serde_json::to_string(&data).unwrap();
+                let response = Response::new_response(success_status_code, create_response_header(json_content_type, &hash_string));
+                stream.write_all(&response.parse_response(&hash_string)).unwrap();
+              },
+              Err(err) => {
+                eprintln!("an error ocurred to fetch people!");
+                let body_content = format!( r#"{{ "status": "err", "message": "{}" }}"#, err);
+                send_response_error(&stream, ResponseMessage::badrequest_error(&body_content, json_content_type).content);
+              }
+            }
+          }
+        },
         "/people.css" => {
           // get the css content of file
           let css = fs::read_to_string("src/public/people.css").unwrap();
@@ -192,7 +214,7 @@ pub fn server_handle(mut stream: TcpStream) {
               Some(j) => {
                 let people_parsed: People = serde_json::from_str(&j).unwrap();
                 if let Ok(conn) = database::connect_db() {
-                  match database::insert_new_people(conn, &people_parsed.name, &people_parsed.age) {
+                  match database::insert_new_people(&conn, &people_parsed.name, &people_parsed.age) {
                     Ok(_) => {
                       let body_content = &format!("People was created!");
                       let response = Response::new_response(
