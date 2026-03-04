@@ -22,12 +22,6 @@ struct People {
   age: String,
 }
 #[derive(Debug, Deserialize)]
-struct DebugPeople {
-  id: String,
-  name: String,
-  age: String,
-}
-#[derive(Debug, Deserialize)]
 struct CalcRequest {
   operation: String,
   number1: f64,

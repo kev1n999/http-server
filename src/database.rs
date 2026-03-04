@@ -3,9 +3,9 @@ use serde::{Serialize, Deserialize};
 
 #[derive(Serialize, Deserialize)]
 pub struct DebugPeople {
-  id: String,
+  id: i64,
   name: String,
-  age: String,
+  age: i64,
 }
 
 pub fn connect_db() -> Result<Connection> {

@@ -20,4 +20,5 @@ createButton.addEventListener("click", async () => {
   const ageVal = personAge.value;
   const result = await createPerson(nameVal, ageVal);
   console.log(result);
+  window.alert(result);
 });
