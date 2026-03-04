@@ -17,6 +17,10 @@ enum RequestMethod {
 }
 
 #[derive(Debug, Deserialize)]
+struct PeopleToDelete {
+  id: i64,
+}
+#[derive(Debug, Deserialize)]
 struct People {
   name: String,
   age: String,
@@ -284,6 +288,41 @@ pub fn server_handle(mut stream: TcpStream) {
         },
       }
     },
+    RequestMethod::DELETE => {
+      match request_path.as_str() {
+        "/delete-people" => {
+          let json_body = req_body.trim_matches(|c: char| c.is_whitespace());
+          let json_deserialize = serde_json::to_string_pretty(json_body);
+          if let Ok(result) = json_deserialize {
+            let inner_json: Option<String> = serde_json::from_str(&result.to_string()).unwrap();
+            match inner_json {
+              Some(j) => {
+                let people_id: PeopleToDelete = serde_json::from_str(&j).unwrap();
+                if let Ok(conn) = database::connect_db() {
+                  match database::delete_people(&conn, people_id.id) {
+                    Ok(_) => {
+                      let response = Response::new_response(success_status_code, create_response_header(text_content_type, "people was deleted!"));
+                      stream.write_all(&response.parse_response("people was deleted!")).unwrap();
+                    },
+                    Err(err) => {
+                      eprintln!("an error ocurred to try to delete people!!");
+                      let body_content = format!( r#"{{ "status": "err", "message": "{}" }}"#, err);
+                      send_response_error(&stream, ResponseMessage::badrequest_error(&body_content, json_content_type).content);
+                    }
+                  }
+                }
+              },
+              _ => {
+                eprintln!("an error ocurred to parse json!!");
+              }
+            }
+          }
+        },
+        _ => {
+          send_response_error(&stream, ResponseMessage::not_found_error("route not found!", text_content_type).content);
+        },
+      }
+    }
     _ => eprintln!("..."),
   }
 

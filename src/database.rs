@@ -29,7 +29,7 @@ pub fn insert_new_people(conn: &Connection, name: &str, age: &str) -> Result<()>
   ", [name, age],)?;
   Ok(())
 }
-pub fn delete_people(conn: &Connection, id: &str) -> Result<()> {
+pub fn delete_people(conn: &Connection, id: i64) -> Result<()> {
   conn.execute("
     DELETE FROM People WHERE id = ?1
   ", [id,],)?;
