@@ -7,16 +7,28 @@
     <link rel="stylesheet" href="people.css">
   </head>
   <body>
-    <form>
-      <h2>Create New Person</h2>
-      <label for="name">Nome:</label>
-      <input type="text" id="name" name="name" required>
-      <label for="age">Idade:</label>
-      <input type="number" id="age" name="age" required min="0">
-    </form>
+    <div>
+      <form>
+        <h2>Create New Person</h2>
+        <label for="name">Nome:</label>
+        <input type="text" id="name" name="name" required>
+        <label for="age">Idade:</label>
+        <input type="number" id="age" name="age" required min="0">
+      </form>
+      <div class="button">
+        <button id="create-person-button">Create</button>
+      </div>
+    </div>
 
-    <div class="button">
-      <button id="create-person-button">Create</button>
+    <div>
+      <form>
+        <h2>Delete a person</h2>
+        <label for="name">Id:</label>
+        <input type="number" id="person-id" required min="1">
+      </form>
+      <div class="button">
+        <button id="delete-person-button">Delete</button>
+      </div>
     </div>
   </body>
 </html>
