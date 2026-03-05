@@ -1,6 +1,6 @@
 # Protcólo HTTP - Minhas anotações sobre o que eu aprendi/entendi sobre o protócolo HTTP(Foi eu quem escrevi, então pode haver erros/equívocos)
 
-# O que é o protcólo HTTP?
+# O que é o protocólo HTTP?
 > O HTTP(HyperText Transfer Protocol) é um protocolo para transmitir dados na web;
 > Ele funciona em cima da pilha de protocólos TCP/IP, que é o principal protocólo usado na camada de transporte de dados, sendo responsável por transmitir os dados de forma segura e confiável.
 > Assim como todo protocólo por definição, o HTTP estabelece um conjunto de regras específicas e bem rigídas sobre como os dados devem ser enviados
