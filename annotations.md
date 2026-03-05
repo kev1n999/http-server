@@ -1,4 +1,4 @@
-# Protcólo HTTP - Minhas anotações sobre o que eu aprendi/entendi sobre o protócolo HTTP(Foi eu quem escrevi, então pode haver erros/equívocos)
+# Protocólo HTTP - Minhas anotações sobre o que eu aprendi/entendi sobre o protócolo HTTP(Foi eu quem escrevi, então pode haver erros/equívocos)
 
 # O que é o protocólo HTTP?
 > O HTTP(HyperText Transfer Protocol) é um protocolo para transmitir dados na web;
