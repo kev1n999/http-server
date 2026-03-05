@@ -1,5 +1,5 @@
 # A simple http server in rust
-> It is a simple http server written in rust for my studies about http protocol
+> It is a simple http server written in rust for my studies about http and TCP/IP protocol
 
 ---
 
